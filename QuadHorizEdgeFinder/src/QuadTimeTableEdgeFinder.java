@@ -51,9 +51,29 @@ public class QuadTimeTableEdgeFinder {
         makespan = ScheduleTasks(tasks[tasks_indices_lct[tasks_indices_lct.length - 1]].latestCompletionTime());
         if(makespan > tasks[tasks_indices_lct[tasks_indices_lct.length - 1]].latestCompletionTime())
             return false;
-        
-        for (int j = 0; j < n-1; j++) {
-
+        int[] TTEnergy = new int[n];
+        Arrays.fill(TTEnergy, 0);
+        Timepoint[] est = new Timepoint[n];
+        Arrays.fill(est, null);
+        for (int j = 0; j < n; j++) {
+            int E = 0; int estt = Integer.MAX_VALUE;
+            for (int i = 0; i < n; i++) {
+                if (tasks[tasks_indices_lct[i]].latestCompletionTime() <= tasks[tasks_indices_lct[j]].latestCompletionTime()) {
+                    E += tasks[tasks_indices_lct[i]].energy();
+                    if (tasks[tasks_indices_lct[i]].earliestStartingTime() <= estt) {
+                        estt = tasks[tasks_indices_lct[i]].earliestStartingTime();
+                        est[j] = tasks[tasks_indices_lct[i]].est_to_timepoint;
+                    }
+                }else {
+                    if (tasks[tasks_indices_lct[i]].hasFixedPart() && tasks[tasks_indices_lct[i]].latestStartingTime() < tasks[tasks_indices_lct[j]].latestCompletionTime()) {
+                        E += (Math.min(tasks[tasks_indices_lct[j]].latestCompletionTime(), tasks[tasks_indices_lct[i]].earliestCompletionTime()) - tasks[tasks_indices_lct[i]].latestStartingTime())*tasks[tasks_indices_lct[i]].height();
+                        if (est[j] != null && tasks[tasks_indices_lct[i]].latestStartingTime() < est[j].time) {
+                            est[j] = tasks[tasks_indices_lct[i]].lst_to_timepoint;
+                        }
+                    }
+                }
+            }
+            TTEnergy[j] = E;
         }
         for(int i=n-1; i > 0; i--)
         {
@@ -66,14 +86,13 @@ public class QuadTimeTableEdgeFinder {
                 boolean isDetected = false;
                 int j = 0;
                 while (j < n && !isDetected) {
-                    if (tasks[tasks_indices_lct[j]].latestCompletionTime() < tasks[tasks_indices_lct[i]].latestCompletionTime()) {
-                        Energy += tasks[tasks_indices_lct[j]].energy();
-                        if (tasks[tasks_indices_lct[j]].earliestStartingTime() <= Est) {
-                            Est = tasks[tasks_indices_lct[j]].earliestStartingTime();
-                            estEnergyOverflow = tasks[tasks_indices_lct[j]].est_to_timepoint.energy - tasks[tasks_indices_lct[j]].est_to_timepoint.overflow;
-                        }
+                    if (est[j] != null && tasks[tasks_indices_lct[j]].latestCompletionTime() < tasks[tasks_indices_lct[i]].latestCompletionTime()) {
+                        estEnergyOverflow = est[j].energy - est[j].overflow;
                         Timepoint t = tasks[tasks_indices_lct[j]].lct_to_timepoint;
-                        if (t.overflow > t.energy - estEnergyOverflow - Energy) {
+                        int Ei = 0;
+                        if (tasks[tasks_indices_lct[i]].hasFixedPart() && tasks[tasks_indices_lct[i]].latestStartingTime() < tasks[tasks_indices_lct[j]].latestCompletionTime())
+                            Ei = (Math.min(tasks[tasks_indices_lct[j]].latestCompletionTime(), tasks[tasks_indices_lct[i]].earliestCompletionTime()) - tasks[tasks_indices_lct[i]].latestStartingTime())*tasks[tasks_indices_lct[i]].height();
+                        if (t.overflow > t.energy - estEnergyOverflow - TTEnergy[j] + Ei) {
                             Prec[tasks_indices_lct[i]] = j;
                             tasks[tasks_indices_lct[i]].inLambda = false;
                             isDetected = true;
