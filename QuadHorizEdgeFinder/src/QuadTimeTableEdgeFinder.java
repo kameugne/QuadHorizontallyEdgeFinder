@@ -90,8 +90,8 @@ public class QuadTimeTableEdgeFinder {
                         estEnergyOverflow = est[j].energy - est[j].overflow;
                         Timepoint t = tasks[tasks_indices_lct[j]].lct_to_timepoint;
                         int Ei = 0;
-                        if (tasks[tasks_indices_lct[i]].hasFixedPart() && tasks[tasks_indices_lct[i]].latestStartingTime() < tasks[tasks_indices_lct[j]].latestCompletionTime())
-                            Ei = (Math.min(tasks[tasks_indices_lct[j]].latestCompletionTime(), tasks[tasks_indices_lct[i]].earliestCompletionTime()) - tasks[tasks_indices_lct[i]].latestStartingTime())*tasks[tasks_indices_lct[i]].height();
+                        if (tasks[tasks_indices_lct[i]].hasFixedPart() && tasks[tasks_indices_lct[i]].latestStartingTime() < maxLct)
+                            Ei = (Math.min(maxLct, tasks[tasks_indices_lct[i]].earliestCompletionTime()) - tasks[tasks_indices_lct[i]].latestStartingTime())*tasks[tasks_indices_lct[i]].height();
                         if (t.overflow > t.energy - estEnergyOverflow - TTEnergy[j] + Ei) {
                             Prec[tasks_indices_lct[i]] = j;
                             tasks[tasks_indices_lct[i]].inLambda = false;
@@ -136,7 +136,8 @@ public class QuadTimeTableEdgeFinder {
         {
             if(Prec[i] != -1)
             {
-                InitializeIncrements(Prec[i]);
+                estPrime[i] += 1;
+                /*InitializeIncrements(Prec[i]);
                 PruningScheduleTasks(tasks[tasks_indices_lct[Prec[i]]].latestCompletionTime(), tasks[i].height());
                 int maxOv = 0;
                 if (tasks[i].est_to_timepoint.contact != null) {
@@ -156,7 +157,7 @@ public class QuadTimeTableEdgeFinder {
                             estPrime[i] = Math.max(estPrime[i], est);
                         }
                     }
-                }
+                }*/
             }
         }
         return estPrime;
